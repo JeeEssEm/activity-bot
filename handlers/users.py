@@ -4,7 +4,9 @@ from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 from aiogram.filters.state import StateFilter
 
-from dependencies import get_user_service
+from dishka.integrations.aiogram import FromDishka
+
+from hse_api import HseAPI
 
 
 class UserStates(StatesGroup):
@@ -20,11 +22,16 @@ class UserHandler:
         await state.set_state(UserStates.waiting_for_email)
 
     @staticmethod
-    async def process_email(message: types.Message, state: FSMContext):
-        user_service = await get_user_service().__anext__()
-        resp = await user_service.create(message.text)
-
-        await message.reply(f'{resp}')
+    async def process_email(
+            message: types.Message,
+            state: FSMContext,
+            api: FromDishka[HseAPI],
+    ):
+        data = await api.get_user_info(message.text)
+        if data.ok:
+            await message.reply(f'Ваше ФИО: {data.dto.fullname}')
+        else:
+            await message.reply(f'{data}')
         await state.clear()
 
 

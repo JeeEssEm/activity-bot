@@ -1,4 +1,9 @@
-from pydantic_settings import BaseSettings
+import os
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+DOTENV = os.path.join(os.path.dirname(__file__), '.env')
 
 
 class Settings(BaseSettings):
@@ -13,9 +18,9 @@ class Settings(BaseSettings):
     BOT_TOKEN: str = 'BOT_TOKEN'
     HSE_EMAIL: str = 'EMAIL'
     HSE_PASSWORD: str = 'PASSWORD'
+    HSE_REFRESH_TOKEN: str | None = 'REFRESH_TOKEN'
 
-    class Config:
-        env_file = '.env'
+    model_config = SettingsConfigDict(env_file=DOTENV)
 
 
 settings = Settings()
