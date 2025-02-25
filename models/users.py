@@ -5,6 +5,7 @@ from sqlalchemy import String
 
 if TYPE_CHECKING:
     from .activities import Activity
+from dtos import UserDto
 from config import Base
 
 
@@ -14,3 +15,6 @@ class User(Base):
     fullname: Mapped[str] = mapped_column(String(244))
 
     activities: Mapped[list['Activity']] = relationship()
+
+    def convert_to_dto(self) -> UserDto:
+        return UserDto(email=self.email, fullname=self.fullname)
