@@ -1,2 +1,1 @@
-from .singleton import singleton
-from .di import AppProvider
+from .di import AppProvider, DatabaseProvider

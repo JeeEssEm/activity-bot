@@ -4,16 +4,15 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
-from dishka import make_async_container
+from dishka import make_async_container, FromDishka
 from dishka.integrations.aiogram import setup_dishka
 
-from shared import AppProvider
+from shared import AppProvider, DatabaseProvider
 from config import settings, get_database_url, Database
 from handlers import register_user_handler
 
 
-async def init_db():
-    db = Database(get_database_url())
+async def init_db(db: FromDishka[Database] = None):
     await db.init_models()
 
 
@@ -23,10 +22,16 @@ async def main():
         default=DefaultBotProperties(parse_mode=ParseMode.HTML)
     )
     dp = Dispatcher()
-    container = make_async_container(AppProvider())
+    providers = [
+        AppProvider(),
+        DatabaseProvider(get_database_url())
+    ]
+
+    container = make_async_container(*providers)
     setup_dishka(container, dp, auto_inject=True)
 
-    await init_db()
+    async with container() as cont:
+        await init_db(await cont.get(Database))
     register_user_handler(dp)
     print('polling...')
     await dp.start_polling(bot)
