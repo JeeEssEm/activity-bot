@@ -20,6 +20,7 @@ class HseAuth:
             email: str, password: str,
             saml_url: str | None = None,
             api_url: str | None = None,
+            refresh_token: str | None = None,
     ):
         self._email: str = email
         self._password: str = password
@@ -41,6 +42,10 @@ class HseAuth:
 
         self._access_token: str | None = None
         self._refresh_token: str | None = None
+
+        if refresh_token:
+            self._refresh_token = refresh_token
+            self._refresh_token_expires = get_token_exp(refresh_token)
 
     async def _sign_in(self, session: ClientSession, link: str) -> str:
         form_data = FormData()

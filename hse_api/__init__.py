@@ -1,1 +1,2 @@
-from .users import UserAPIManager
+from .auth import HseAuth
+from .users import HseAPI
