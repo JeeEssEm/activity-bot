@@ -150,3 +150,4 @@ class HseAuth:
 
         self._access_token_expires = get_token_exp(self._access_token)
         self._refresh_token_expires = get_token_exp(self._refresh_token)
+        print(f'new refresh token: {self._refresh_token}')

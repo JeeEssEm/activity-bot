@@ -2,10 +2,12 @@ import aiohttp
 
 from .auth import HseAuth
 from dtos import (
-    UserDto, ScheduleDto, StreamsDto, StreamsResponse,
-    UserResponse, ErrorCode, ScheduleResponse,
-
+    UserDto, ScheduleDto, StreamsDto,
 )
+from exceptions.hse_auth import (
+    EmailNotFoundInHseDB, InternalError
+)
+from exceptions.hse_api import StudentNotFound
 
 
 class HseAPI:
@@ -18,7 +20,7 @@ class HseAPI:
                           'Chrome/132.0.6834.164 Mobile Safari/537.36'
         }
 
-    async def get_user_info(self, email: str) -> UserResponse:
+    async def get_user_info(self, email: str) -> UserDto:
         token = await self._auth_manager.get_access_token()
 
         async with aiohttp.ClientSession(headers=self.headers) as session:
@@ -28,33 +30,29 @@ class HseAPI:
             async with session.get(
                     f'https://api.hseapp.ru/v3/dump/email/{email}'
             ) as response:
-                res = UserResponse(
-                    ok=True,
-                    dto=UserDto(
+                res = UserDto(
                         fullname=await response.text(),
                         email=email,
-                    ),
-                    msg='всё ок!',
-                )
-                if response.status != 200:
-                    res.ok = False
+                    )
 
                 json = await response.json()
                 if json.get('error'):
                     if json['error']['name'] == 'SendCommandError':
-                        res.msg = 'Емейл не найден. Повторите ввод'
-                        res.error_code = ErrorCode.not_found.value
+                        raise EmailNotFoundInHseDB(
+                            'Емейл не найден. Повторите ввод'
+                        )
                     else:
-                        res.msg = 'Произошла внутренняя ошибка. Напишите админу'
-                        res.error_code = ErrorCode.internal.value
                         print(json)
+                        raise InternalError(
+                            'Произошла внутренняя ошибка. Напишите админу'
+                        )
                 else:
-                    res.dto.fullname = json.get('full_name')
+                    res.fullname = json.get('full_name')
             return res
 
     async def get_user_schedule(
             self, email: str, start_date: str, end_date: str
-    ) -> ScheduleResponse:
+    ) -> ScheduleDto:
         link = (
             f'https://api.hseapp.ru/v3/ruz/lessons'
             f'?start={start_date}&email={email}&end={end_date}'
@@ -62,42 +60,27 @@ class HseAPI:
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with session.get(link) as response:
                 data = await response.json()
-                resp = ScheduleResponse(
-                    ok=True,
-                    msg='ок',
-                    dto=ScheduleDto(data)
-                )
-                if data.get('error'):
-                    resp.ok = False
+                resp = ScheduleDto(data)
+                print(resp)
+                if isinstance(data, dict) and data.get('error'):
                     if data['error']['name'] == 'StudentNotFound':
-                        resp.error_code = ErrorCode.not_found.value
-                        resp.msg = 'Студент не найден'
+                        raise StudentNotFound('Студент не найден')
                     else:
-                        resp.error_code = ErrorCode.internal.value
-                        resp.msg = ('Произошла внутренняя ошибка.'
-                                    ' Напишите админу')
+                        raise InternalError(
+                            'Произошла внутренняя ошибка. Напишите админу'
+                        )
 
                 return resp
 
     async def get_user_streams(
             self, email: str, start_date: str, end_date: str
-    ):
+    ) -> StreamsDto:
         schedule = await self.get_user_schedule(
             email, start_date, end_date
         )
-        if not schedule.ok:
-            return StreamsResponse(
-                ok=False,
-                msg=schedule.msg,
-                dto=StreamsDto([])
-            )
         streams = []
-        for stream in schedule.dto.schedule:
+        for stream in schedule.schedule:
             streams.append(
                 stream.get('stream')
             )
-        return StreamsResponse(
-            ok=True,
-            msg='Ваши потоки:',
-            dto=StreamsDto(streams)
-        )
+        return StreamsDto(streams)

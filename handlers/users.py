@@ -6,6 +6,9 @@ from aiogram.filters.state import StateFilter
 
 from dishka.integrations.aiogram import FromDishka
 
+from exceptions.hse_auth import (
+    EmailAlreadyExistsInHseDB, EmailNotFoundInHseDB, InternalError
+)
 from repositories import UserRepository
 from hse_api import HseAPI
 from services import UserService
@@ -30,11 +33,16 @@ class UserHandler:
             state: FSMContext,
             user_service: FromDishka[UserService],
     ):
-        resp = await user_service.create(message.text, message.from_user.id)
-        if resp.ok:
+        try:
+            await user_service.create(message.text, message.from_user.id)
+            await message.reply('Аккаунт успешно создан!')
             await state.set_state(UserStates.choose_streams)
-            # await state.clear()
-        await message.reply(resp.msg)
+        except EmailNotFoundInHseDB:
+            await message.reply('Такой Email не найден в базе ВШЭ!')
+        except EmailAlreadyExistsInHseDB:
+            await message.reply('Пользователь с таким email уже существует!')
+        except InternalError or Exception:
+            await message.reply('Произошла внутренняя ошибка. Напишите админу')
 
     @staticmethod
     async def process_streams(
