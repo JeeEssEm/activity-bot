@@ -17,7 +17,7 @@ class UserRepository(BaseRepository):
 
     async def user_exists_by_id(self, user_id: int) -> bool:
         user = await self.session.get(User, user_id)
-        return not user
+        return bool(user)
 
     async def user_exists_by_email(self, email: str) -> bool:
         user = await self.session.get(User, {'email': email})  # FIXME

@@ -72,15 +72,15 @@ class HseAPI:
 
                 return resp
 
-    async def get_user_streams(
-            self, email: str, start_date: str, end_date: str
-    ) -> StreamsDto:
-        schedule = await self.get_user_schedule(
-            email, start_date, end_date
-        )
-        streams = []
-        for stream in schedule.schedule:
-            streams.append(
-                stream.get('stream')
-            )
-        return StreamsDto(streams)
+    # async def get_user_streams(
+    #         self, email: str, start_date: str, end_date: str
+    # ) -> StreamsDto:
+    #     schedule = await self.get_user_schedule(
+    #         email, start_date, end_date
+    #     )
+    #     streams = []
+    #     for stream in schedule.schedule:
+    #         streams.append(
+    #             stream.get('stream')
+    #         )
+    #     return StreamsDto(streams)
