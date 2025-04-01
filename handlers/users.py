@@ -1,3 +1,5 @@
+from math import ceil
+
 from aiogram import types, Dispatcher, Router, F
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
@@ -12,7 +14,8 @@ from exceptions.hse_auth import (
 from repositories import UserRepository
 from hse_api import HseAPI
 from services import UserService
-
+from keyboards.list_kb import build_list_kb
+from dtos import ChooseStreams, StreamType
 
 router = Router()
 
@@ -54,17 +57,17 @@ async def process_email(
         await message.reply('Произошла внутренняя ошибка. Напишите админу')
 
 
-@router.message(F.text, UserStates.choose_streams)
-async def process_streams(
-        message: types.Message,
-        state: FSMContext,
-        user_service: FromDishka[UserService],
-):
-    email = await user_service.get_user_email_by_id(message.from_user.id)
-    streams = await user_service.get_streams(email)
-
-    msg = '\n'.join(streams.streams)
-    await message.reply(f'Вот ваши дисциплины:\n{msg}')
+# @router.message(F.text, UserStates.choose_streams)
+# async def process_streams(
+#         message: types.Message,
+#         state: FSMContext,
+#         user_service: FromDishka[UserService],
+# ):
+#     email = await user_service.get_user_email_by_id(message.from_user.id)
+#     streams = await user_service.get_streams(email)
+#
+#     msg = '\n'.join(streams.streams)
+#     await message.reply(f'Вот ваши дисциплины:\n{msg}')
 
 
 @router.message(Command('my_disciplines'))
@@ -76,5 +79,31 @@ async def get_disciplines(
     email = await user_service.get_user_email_by_id(message.from_user.id)
     streams = await user_service.get_streams(email)
 
-    msg = '\n'.join(stream.title + stream.type for stream in streams.streams)
-    await message.reply(f'Вот ваши дисциплины:\n{msg}')
+    items_per_page = 5
+    pages = [[] for _ in range(ceil(len(streams.streams) / items_per_page))]
+    chosen = {}
+    for i, stream in enumerate(streams.streams):
+        pages[i // items_per_page].append(stream)
+        chosen[stream.short_stream] = False
+
+    await state.update_data(chosen_streams=ChooseStreams(
+        content=pages,
+        chosen_streams=chosen
+    ))
+
+    legend = f'''
+├Лекция: {StreamType.lecture.value}
+├Семинар: {StreamType.seminar.value}
+├Практические занятия: {StreamType.practice.value}
+╰Научно-исследовательский семинар: {StreamType.science_seminar.value}
+    '''
+    await message.reply(
+        f'🗺️Навигатор по типам:{legend}\n'
+        f'📚<b>Твои дисциплины для отслеживания</b>',
+        reply_markup=build_list_kb(
+            pages=pages,
+            chosen=chosen,
+            page=0,
+            page_cb='my_disciplines_page|'
+        )
+    )

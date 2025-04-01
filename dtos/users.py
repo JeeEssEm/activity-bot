@@ -39,10 +39,37 @@ class StreamDto:
     title: str
     full_stream: str
 
+    @staticmethod
+    def truncate(string: str, ln: int) -> str:
+        if len(string) > ln:
+            return string[:ln] + '...'
+        return string
+
+    def truncated(self) -> str:
+        return self.truncate(self.title, 30) + ' ' + self.type
+
+    def get_callback(self, page: int):
+        return f'my_disciplines_modify|{page}|{self.short_stream}'
+
+    @property
+    def short_stream(self) -> str:
+        return self.full_stream.split('#')[0]
+
     def __hash__(self):
         return hash(self.full_stream)
+
+    def __eq__(self, other):
+        if isinstance(other, str):
+            return self.full_stream == other
+        return self.full_stream == other.full_stream
 
 
 @dataclass
 class StreamsDto:
     streams: list[StreamDto]
+
+
+@dataclass
+class ChooseStreams:
+    content: list[list[StreamDto]]
+    chosen_streams: dict[str, bool]
