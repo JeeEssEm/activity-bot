@@ -61,7 +61,7 @@ class HseAPI:
             async with session.get(link) as response:
                 data = await response.json()
                 resp = ScheduleDto(data)
-                print(resp)
+
                 if isinstance(data, dict) and data.get('error'):
                     if data['error']['name'] == 'StudentNotFound':
                         raise StudentNotFound('Студент не найден')

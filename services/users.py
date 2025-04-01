@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from repositories import UserRepository
 from hse_api import HseAPI
 from exceptions.hse_auth import EmailNotFoundInHseDB, EmailAlreadyExistsInHseDB
-from dtos import StreamsDto
+from dtos import StreamsDto, StreamType, StreamDto
 
 
 class UserService:
@@ -25,15 +25,20 @@ class UserService:
 
     async def get_streams(self, email: str) -> StreamsDto:
         today = datetime.today()
-        streams = await self.api.get_user_schedule(
+        raw_streams = await self.api.get_user_schedule(
             email,
             start_date=today.strftime('%Y-%m-%d'),
             end_date=(today + timedelta(days=30)).strftime('%Y-%m-%d')
         )
-        return StreamsDto(list(set(
-            f'{stream.get('stream', '##').split('#')[-1]} ({stream.get('type')})'
-            for stream in streams.schedule
-        )))
+        uniq_streams = set(
+            StreamDto(
+                type=StreamType.from_string(s.get('type')),
+                title=s.get('stream', '##').split('#')[-1],
+                full_stream=s.get('stream')
+            )
+            for s in raw_streams.schedule
+        )
+        return StreamsDto(list(uniq_streams))
 
     async def user_exists(self, tg_id: int) -> bool:
         ...

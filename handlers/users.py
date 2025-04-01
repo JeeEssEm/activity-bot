@@ -76,5 +76,5 @@ async def get_disciplines(
     email = await user_service.get_user_email_by_id(message.from_user.id)
     streams = await user_service.get_streams(email)
 
-    msg = '\n'.join(streams.streams)
+    msg = '\n'.join(stream.title + stream.type for stream in streams.streams)
     await message.reply(f'Вот ваши дисциплины:\n{msg}')
