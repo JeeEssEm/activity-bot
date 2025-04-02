@@ -1,12 +1,15 @@
-from aiogram import types, Dispatcher, Router, F
-from aiogram.types import CallbackQuery
+from aiogram import types, Dispatcher, Router, F, Bot
+from aiogram.filters import Command
+from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
 
 from dishka.integrations.aiogram import FromDishka
 
 from services import UserService
+from repositories import StreamRepository
 from dtos import ChooseStreams
 from keyboards.list_kb import build_list_kb
+from constants import LEGEND
 
 router = Router()
 
@@ -20,8 +23,8 @@ async def modify_list(
     title = args[-1]
     page = int(args[-2])
     data: ChooseStreams = (await state.get_data()).get('chosen_streams')
-    data.chosen_streams[title].is_chosen = (
-        not data.chosen_streams[title].is_chosen
+    data.chosen_streams[title][0] = (
+        not data.chosen_streams[title][0]
     )
     await state.update_data(chosen_streams=data)
 
@@ -51,9 +54,42 @@ async def get_discipline_page(
 
 @router.callback_query(F.data == 'my_disciplines_confirm')
 async def confirm(
-        message: types.Message,
+        cb: CallbackQuery,
+        bot: Bot,
         state: FSMContext,
         service: FromDishka[UserService]
 ):
-    ...
+    data: ChooseStreams = (await state.get_data()).get('chosen_streams')
+    await service.add_streams(
+        user_id=cb.message.chat.id,
+        streams=[s[1] for s in data.chosen_streams.values() if s[0]],
+    )
+    await cb.message.delete()
+    await state.clear()
+    await bot.send_message(
+        chat_id=cb.message.chat.id,
+        text='Дисциплины для отслеживания успешно изменены!'
+    )
 
+
+@router.message(Command('my_disciplines'))
+async def get_my_disciplines(
+        message: Message,
+        state: FSMContext,
+        user_service: FromDishka[UserService],
+):
+    data: ChooseStreams = await user_service.get_user_disciplines_kb(
+        message.from_user.id, from_db=True
+    )
+    await state.update_data(chosen_streams=data)
+
+    await message.reply(
+        f'🗺️Навигатор по типам:{LEGEND}\n'
+        f'📚<b>Твои дисциплины для отслеживания</b>',
+        reply_markup=build_list_kb(
+            pages=data.content,
+            chosen=data.chosen_streams,
+            page=0,
+            page_cb='my_disciplines_page|'
+        )
+    )

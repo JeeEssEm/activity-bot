@@ -33,6 +33,7 @@ class HseAPI:
                 res = UserDto(
                         fullname=await response.text(),
                         email=email,
+                        id=-1
                     )
 
                 json = await response.json()

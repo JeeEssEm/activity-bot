@@ -6,7 +6,7 @@ from config import Database, get_database_url
 
 async def main():
     db = Database(get_database_url())
-    # await db.init_models()
+    await db.init_models()
     async with db.session() as session:
         repo = StreamRepository(session)
         user_repo = UserRepository(session)

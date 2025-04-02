@@ -18,5 +18,5 @@ class Activity(Base):
                                            primary_key=True)
     activities: Mapped[int]
 
-    # user: Mapped['User'] = relationship(back_populates='activities')
-    # stream: Mapped['Stream'] = relationship(back_populates='activities')
+    user: Mapped['User'] = relationship(back_populates='activities')
+    stream: Mapped['Stream'] = relationship(back_populates='activities')
