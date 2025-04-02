@@ -12,9 +12,11 @@ from config import Base
 
 class Activity(Base):
     __tablename__ = 'activities'
-    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
-    stream_id: Mapped[int] = mapped_column(ForeignKey('streams.id'))
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'),
+                                         primary_key=True)
+    stream_id: Mapped[int] = mapped_column(ForeignKey('streams.id'),
+                                           primary_key=True)
     activities: Mapped[int]
 
-    user: Mapped['User'] = relationship(back_populates='activities')
-    stream: Mapped['Stream'] = relationship(back_populates='activities')
+    # user: Mapped['User'] = relationship(back_populates='activities')
+    # stream: Mapped['Stream'] = relationship(back_populates='activities')

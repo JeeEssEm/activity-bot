@@ -26,6 +26,7 @@ class StreamType(Enum):
 class UserDto:
     fullname: str
     email: str
+    id: int
 
 
 @dataclass
@@ -49,11 +50,11 @@ class StreamDto:
         return self.truncate(self.title, 30) + ' ' + self.type
 
     def get_callback(self, page: int):
-        return f'my_disciplines_modify|{page}|{self.short_stream}'
+        return f'modify_subjs|{page}|{self.short_stream}'
 
     @property
     def short_stream(self) -> str:
-        return self.full_stream.split('#')[0]
+        return ''.join(self.full_stream.split('#')[:2])
 
     def __hash__(self):
         return hash(self.full_stream)
@@ -65,6 +66,13 @@ class StreamDto:
 
 
 @dataclass
+class StreamState:
+    full_stream: str
+    is_chosen: bool
+    id: int | None = None
+
+
+@dataclass
 class StreamsDto:
     streams: list[StreamDto]
 
@@ -72,4 +80,4 @@ class StreamsDto:
 @dataclass
 class ChooseStreams:
     content: list[list[StreamDto]]
-    chosen_streams: dict[str, bool]
+    chosen_streams: dict[str, StreamState]

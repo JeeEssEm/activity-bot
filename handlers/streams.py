@@ -11,7 +11,7 @@ from keyboards.list_kb import build_list_kb
 router = Router()
 
 
-@router.callback_query(F.data.startswith('my_disciplines_modify|'))
+@router.callback_query(F.data.startswith('modify_subjs|'))
 async def modify_list(
         cb: CallbackQuery,
         state: FSMContext
@@ -20,7 +20,9 @@ async def modify_list(
     title = args[-1]
     page = int(args[-2])
     data: ChooseStreams = (await state.get_data()).get('chosen_streams')
-    data.chosen_streams[title] = not data.chosen_streams[title]
+    data.chosen_streams[title].is_chosen = (
+        not data.chosen_streams[title].is_chosen
+    )
     await state.update_data(chosen_streams=data)
 
     await cb.message.edit_reply_markup(reply_markup=build_list_kb(
@@ -47,7 +49,7 @@ async def get_discipline_page(
     ))
 
 
-@router.callback_query(F.data == '')
+@router.callback_query(F.data == 'my_disciplines_confirm')
 async def confirm(
         message: types.Message,
         state: FSMContext,

@@ -4,10 +4,11 @@ from .base import BaseRepository
 
 
 class UserRepository(BaseRepository):
-    async def create(self, email: str, fullname: str, tg_id: int):
+    async def create(self, email: str, fullname: str, tg_id: int) -> UserDto:
         user = User(email=email, fullname=fullname, id=tg_id)
         self.session.add(user)
         await self.session.commit()
+        return user.convert_to_dto()
 
     async def get_user_by_id(self, user_id: int) -> UserDto:
         user = await self.session.get(User, user_id)

@@ -15,7 +15,7 @@ from repositories import UserRepository
 from hse_api import HseAPI
 from services import UserService
 from keyboards.list_kb import build_list_kb
-from dtos import ChooseStreams, StreamType
+from dtos import ChooseStreams, StreamType, StreamState
 
 router = Router()
 
@@ -84,11 +84,14 @@ async def get_disciplines(
     chosen = {}
     for i, stream in enumerate(streams.streams):
         pages[i // items_per_page].append(stream)
-        chosen[stream.short_stream] = False
+        chosen[stream.short_stream] = StreamState(
+            stream.full_stream,
+            False
+        )
 
     await state.update_data(chosen_streams=ChooseStreams(
         content=pages,
-        chosen_streams=chosen
+        chosen_streams=chosen,
     ))
 
     legend = f'''

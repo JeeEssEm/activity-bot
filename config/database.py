@@ -18,10 +18,8 @@ str_uniq = Annotated[str, mapped_column(unique=True, nullable=False)]
 class Base(AsyncAttrs, DeclarativeBase):
     __abstract__ = True
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.id!r})"
+        return f'{self.__class__.__name__}({self.id!r})'
 
 
 class Database:

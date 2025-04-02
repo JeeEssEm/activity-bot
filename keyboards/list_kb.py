@@ -1,11 +1,11 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from dtos import StreamDto
+from dtos import StreamDto, StreamState
 
 
 def build_list_kb(
         pages: list[list[StreamDto]],
-        chosen: dict[str, bool],
+        chosen: dict[str, StreamState],
         page: int,
         page_cb: str
 ) -> InlineKeyboardMarkup:
@@ -31,7 +31,7 @@ def build_list_kb(
     inline_kb = [
         *[
             [InlineKeyboardButton(
-                text=(('✅' if chosen[obj.short_stream] else '') +
+                text=(('✅' if chosen[obj.short_stream].is_chosen else '') +
                       obj.truncated()),
                 callback_data=obj.get_callback(page)
             )]

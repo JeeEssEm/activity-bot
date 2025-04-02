@@ -11,10 +11,11 @@ from config import Base
 
 class User(Base):
     __tablename__ = 'users'
+    id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(320), unique=True)
     fullname: Mapped[str] = mapped_column(String(244))
 
     activities: Mapped[list['Activity']] = relationship()
 
     def convert_to_dto(self) -> UserDto:
-        return UserDto(email=self.email, fullname=self.fullname)
+        return UserDto(email=self.email, fullname=self.fullname, id=self.id)
