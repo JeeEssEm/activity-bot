@@ -72,14 +72,24 @@ async def get_my_disciplines(
         state: FSMContext,
         user_service: FromDishka[UserService],
 ):
-    streams = await user_service.get_active_user_disciplines(
+    pages, chosen = await user_service.get_active_user_disciplines(
         message.from_user.id
     )
-
+    await state.update_data(chosen_streams=ChooseStreams(
+        content=pages,
+        chosen_streams=chosen
+    ))
     await message.reply(
         f'🗺️Навигатор по типам:{LEGEND}\n'
         f'<b>———</b>\n'
-        f'📚<b>Твои дисциплины для отслеживания</b>\n{'\n'.join(links)}'
+        f'📚<b>Твои дисциплины для отслеживания</b>',
+        reply_markup=build_start_choose_kb(
+            pages, chosen,
+            0,
+            page_cb='my_disciplines_page|',
+            confirm='Добавить',
+            confirm_cb='my_disciplines_add'
+        )
     )
     # data: ChooseStreams = await user_service.get_user_disciplines(
     #     message.from_user.id, from_db=True)
@@ -95,3 +105,24 @@ async def get_my_disciplines(
     #         page_cb='my_disciplines_page|'
     #     )
     # )
+
+
+@router.callback_query(F.data.startswith('get_subj|'))
+async def get_subject(
+        cb: CallbackQuery,
+        bot: Bot,
+        state: FSMContext,
+        stream_repo: FromDishka[StreamRepository]
+):
+    subject_stream = cb.data.split('|')[-1]
+    data: ChooseStreams = (await state.get_data()).get('chosen_streams')
+
+    stream = data.chosen_streams[subject_stream][1]
+    await state.clear()
+    await cb.message.delete()
+    await bot.send_message(
+        chat_id=cb.message.chat.id,
+        text=f'Дисциплина: {stream.title}'
+        # TODO: сделать нормальную страницу с дисциплиной + кнопка назад
+    )
+    await state.clear()

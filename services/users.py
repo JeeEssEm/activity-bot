@@ -1,3 +1,4 @@
+from typing import Callable
 from math import ceil
 from datetime import datetime, timedelta
 
@@ -56,8 +57,31 @@ class UserService:
     async def user_exists(self, tg_id: int) -> bool:
         ...
 
-    async def get_active_user_disciplines(self, user_id: int) -> list[StreamDtoDB]:
-        return await self.stream_repo.get_user_streams(user_id)
+    async def get_active_user_disciplines(
+            self, user_id: int
+    ) -> (list[list[StreamDtoDB]], dict[bool, StreamDtoDB]):
+        streams = await self.stream_repo.get_user_streams(user_id)
+        pages, chosen = self.build_pages(
+            streams, 5,
+            check_active=lambda _: False,
+            get_key=lambda stream: stream.short_stream
+        )
+        return pages, chosen
+
+    @staticmethod
+    def build_pages(
+            collection: list, items_per_page: int,
+            check_active: Callable, get_key: Callable
+    ) -> (list[list], dict):
+        pages = [[] for _ in range(ceil(len(collection) / items_per_page))]
+        chosen = {}
+        for i, element in enumerate(collection):
+            pages[i // items_per_page].append(element)
+            chosen[get_key(element)] = [
+                check_active(element),
+                element
+            ]
+        return pages, chosen
 
     async def get_user_disciplines(
             self, user_id: int, from_db: bool = False
@@ -71,12 +95,9 @@ class UserService:
         streams = await self.get_streams_from_api(email)
 
         items_per_page = 5
-        pages = [[] for _ in range(ceil(len(streams.streams) / items_per_page))]
-        chosen = {}
-        for i, stream in enumerate(streams.streams):
-            pages[i // items_per_page].append(stream)
-            chosen[stream.short_stream] = [
-                stream.full_stream in active_streams,
-                stream
-            ]
+        pages, chosen = self.build_pages(
+            streams.streams, items_per_page,
+            check_active=lambda stream: stream.full_stream in active_streams,
+            get_key=lambda stream: stream.short_stream
+        )
         return ChooseStreams(pages, chosen)

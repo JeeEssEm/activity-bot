@@ -76,6 +76,9 @@ class StreamDto:
 class StreamDtoDB(StreamDto):
     id: int
 
+    def get_callback(self, page: int) -> str:
+        return f'get_subj|{self.short_stream}'
+
 
 @dataclass
 class StreamsDto:
@@ -84,5 +87,5 @@ class StreamsDto:
 
 @dataclass
 class ChooseStreams:
-    content: list[list[StreamDto]]
-    chosen_streams: dict[str, [bool, StreamDto]]
+    content: list[list[StreamDto | StreamDtoDB]]
+    chosen_streams: dict[str, [bool, StreamDto | StreamDtoDB]]
