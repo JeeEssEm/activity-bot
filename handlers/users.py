@@ -14,9 +14,9 @@ from exceptions.hse_auth import (
 from repositories import UserRepository
 from hse_api import HseAPI
 from services import UserService
-from keyboards.list_kb import build_list_kb
+from keyboards.list_kb import build_start_choose_kb
 from dtos import ChooseStreams, StreamType
-from constants import LEGEND
+from constants import NAVIGATOR
 
 router = Router()
 
@@ -49,21 +49,17 @@ async def process_email(
         await user_service.create(message.text, message.from_user.id)
         await message.reply('Аккаунт успешно создан!')
         # await state.set_state(UserStates.choose_streams)
-        data: ChooseStreams = await user_service.get_user_disciplines_kb(
-            message.from_user.id
-        )
+        data: ChooseStreams = await user_service.get_user_disciplines(
+            message.from_user.id)
         await state.clear()
         await state.update_data(chosen_streams=data)
 
         await message.reply(
-            f'🗺️Навигатор по типам:{LEGEND}\n'
-            f'📚<b>Твои дисциплины для отслеживания</b>',
-            reply_markup=build_list_kb(
-                pages=data.content,
-                chosen=data.chosen_streams,
-                page=0,
-                page_cb='my_disciplines_page|'
-            )
+            NAVIGATOR,
+            reply_markup=build_start_choose_kb(pages=data.content,
+                                               chosen=data.chosen_streams,
+                                               page=0,
+                                               page_cb='my_disciplines_page|')
         )
 
     except EmailNotFoundInHseDB:

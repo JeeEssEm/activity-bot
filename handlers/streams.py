@@ -8,7 +8,7 @@ from dishka.integrations.aiogram import FromDishka
 from services import UserService
 from repositories import StreamRepository
 from dtos import ChooseStreams
-from keyboards.list_kb import build_list_kb
+from keyboards.list_kb import build_start_choose_kb
 from constants import LEGEND
 
 router = Router()
@@ -28,12 +28,9 @@ async def modify_list(
     )
     await state.update_data(chosen_streams=data)
 
-    await cb.message.edit_reply_markup(reply_markup=build_list_kb(
-        pages=data.content,
-        chosen=data.chosen_streams,
-        page=page,
-        page_cb='my_disciplines_page|'
-    ))
+    await cb.message.edit_reply_markup(reply_markup=build_start_choose_kb(
+        pages=data.content, chosen=data.chosen_streams, page=page,
+        page_cb='my_disciplines_page|'))
 
 
 @router.callback_query(F.data.startswith('my_disciplines_page|'))
@@ -44,12 +41,9 @@ async def get_discipline_page(
     data: ChooseStreams = (await state.get_data()).get('chosen_streams')
     page = int(cb.data.split('|')[-1])
 
-    await cb.message.edit_reply_markup(reply_markup=build_list_kb(
-        pages=data.content,
-        chosen=data.chosen_streams,
-        page=page,
-        page_cb='my_disciplines_page|'
-    ))
+    await cb.message.edit_reply_markup(reply_markup=build_start_choose_kb(
+        pages=data.content, chosen=data.chosen_streams, page=page,
+        page_cb='my_disciplines_page|'))
 
 
 @router.callback_query(F.data == 'my_disciplines_confirm')
@@ -78,18 +72,26 @@ async def get_my_disciplines(
         state: FSMContext,
         user_service: FromDishka[UserService],
 ):
-    data: ChooseStreams = await user_service.get_user_disciplines_kb(
-        message.from_user.id, from_db=True
+    streams = await user_service.get_active_user_disciplines(
+        message.from_user.id
     )
-    await state.update_data(chosen_streams=data)
 
     await message.reply(
         f'🗺️Навигатор по типам:{LEGEND}\n'
-        f'📚<b>Твои дисциплины для отслеживания</b>',
-        reply_markup=build_list_kb(
-            pages=data.content,
-            chosen=data.chosen_streams,
-            page=0,
-            page_cb='my_disciplines_page|'
-        )
+        f'<b>———</b>\n'
+        f'📚<b>Твои дисциплины для отслеживания</b>\n{'\n'.join(links)}'
     )
+    # data: ChooseStreams = await user_service.get_user_disciplines(
+    #     message.from_user.id, from_db=True)
+    # await state.update_data(chosen_streams=data)
+    #
+    # await message.reply(
+    #     f'🗺️Навигатор по типам:{LEGEND}\n'
+    #     f'',
+    #     reply_markup=build_list_kb(
+    #         pages=data.content,
+    #         chosen=data.chosen_streams,
+    #         page=0,
+    #         page_cb='my_disciplines_page|'
+    #     )
+    # )

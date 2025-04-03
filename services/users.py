@@ -4,8 +4,7 @@ from datetime import datetime, timedelta
 from repositories import UserRepository, StreamRepository
 from hse_api import HseAPI
 from exceptions.hse_auth import EmailNotFoundInHseDB, EmailAlreadyExistsInHseDB
-from dtos import StreamsDto, StreamType, StreamDto, ChooseStreams
-from keyboards.list_kb import build_list_kb
+from dtos import StreamsDto, StreamType, StreamDto, ChooseStreams, StreamDtoDB
 
 
 class UserService:
@@ -57,7 +56,10 @@ class UserService:
     async def user_exists(self, tg_id: int) -> bool:
         ...
 
-    async def get_user_disciplines_kb(
+    async def get_active_user_disciplines(self, user_id: int) -> list[StreamDtoDB]:
+        return await self.stream_repo.get_user_streams(user_id)
+
+    async def get_user_disciplines(
             self, user_id: int, from_db: bool = False
     ) -> ChooseStreams:
         active_streams = []
