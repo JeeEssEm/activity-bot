@@ -8,7 +8,7 @@ from models import Activity
 from .base import BaseRepository
 import models
 from exceptions.db import UserNotFound, ActivityAlreadyExists, CannotAddActivityToNotSubscribedStudent
-from dtos import StreamDto, StreamDtoDB
+from dtos import StreamDto, StreamDtoDB, ActivityDto
 
 
 class StreamRepository(BaseRepository):
@@ -65,6 +65,10 @@ class StreamRepository(BaseRepository):
             raise CannotAddActivityToNotSubscribedStudent()
         return obj
 
+    async def get_user_stream_activity(self, user_id: int, stream_id: int) -> float:
+        user = await self._get_user_activity(user_id, stream_id)
+        return user.activities
+
     async def set_user_activities(self, user_id: int, stream_id: int, activities: int):
         user = await self._get_user_activity(user_id, stream_id)
         user.activities = activities
@@ -75,7 +79,7 @@ class StreamRepository(BaseRepository):
         user.activities += count
         await self.session.commit()
 
-    async def median_activity(self, stream_id: int) -> float:
+    async def get_median_activity(self, stream_id: int) -> float:
         filtered_activities = (
             select(models.Activity.activities)
             .where(models.Activity.stream_id == stream_id)

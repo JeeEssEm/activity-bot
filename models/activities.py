@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from .streams import Stream
 
 from config import Base
+from dtos import ActivityDto
 
 
 class Activity(Base):
@@ -20,3 +21,10 @@ class Activity(Base):
 
     user: Mapped['User'] = relationship(back_populates='activities')
     stream: Mapped['Stream'] = relationship(back_populates='activities')
+
+    def convert_to_dto(self) -> ActivityDto:
+        return ActivityDto(
+            user_id=self.user_id,
+            stream_id=self.stream_id,
+            score=self.activities
+        )

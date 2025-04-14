@@ -50,16 +50,19 @@ async def process_email(
         await message.reply('Аккаунт успешно создан!')
         # await state.set_state(UserStates.choose_streams)
         data: ChooseStreams = await user_service.get_user_disciplines(
-            message.from_user.id)
+            message.from_user.id
+        )
         await state.clear()
         await state.update_data(chosen_streams=data)
 
         await message.reply(
             NAVIGATOR,
-            reply_markup=build_start_choose_kb(pages=data.content,
-                                               chosen=data.chosen_streams,
-                                               page=0,
-                                               page_cb='my_disciplines_page|')
+            reply_markup=build_start_choose_kb(
+                pages=data.content,
+                chosen=data.chosen_streams,
+                page=0,
+                page_cb='my_disciplines_page|'
+            )
         )
 
     except EmailNotFoundInHseDB:

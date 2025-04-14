@@ -118,11 +118,16 @@ async def get_subject(
     data: ChooseStreams = (await state.get_data()).get('chosen_streams')
 
     stream = data.chosen_streams[subject_stream][1]
+    median = await stream_repo.get_median_activity(stream.id)
+    current_activity = await stream_repo.get_user_stream_activity(cb.message.chat.id, stream.id)
+
     await state.clear()
     await cb.message.delete()
     await bot.send_message(
         chat_id=cb.message.chat.id,
-        text=f'Дисциплина: {stream.title}'
+        text=f'<b>{stream.title}</b>\n'
+             f'👤Ваша активность: {current_activity}\n'
+             f'📈 Медианная активность: {median}\n'
         # TODO: сделать нормальную страницу с дисциплиной + кнопка назад
     )
     await state.clear()

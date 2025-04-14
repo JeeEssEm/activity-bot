@@ -32,9 +32,9 @@ async def main():
         await repo.set_user_activities(kumar.id, streams[0].id, 1)
         await repo.set_user_activities(kumar.id, streams[1].id, 50)
 
-        print(await repo.median_activity(streams[0].id))
-        print(await repo.median_activity(streams[1].id))
-        print(await repo.median_activity(streams[2].id))
+        print(await repo.get_median_activity(streams[0].id))
+        print(await repo.get_median_activity(streams[1].id))
+        print(await repo.get_median_activity(streams[2].id))
 
         # await repo.create_streams_user(user.id, [streams[0].id])
 
