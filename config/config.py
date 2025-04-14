@@ -26,7 +26,9 @@ class Settings(BaseSettings):
 settings = Settings()
 
 
-def get_database_url():
+def get_database_url(db_name=None):
+    if not db_name:
+        db_name = 'db'
     if settings.DEBUG:
-        return 'sqlite+aiosqlite:///./db.sqlite'
+        return f'sqlite+aiosqlite:///./{db_name}.sqlite'
     return f'postgresql+asyncpg://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}'

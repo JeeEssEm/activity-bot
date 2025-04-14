@@ -1,31 +1,45 @@
 import asyncio
 
+from dtos import StreamDto
 from repositories import UserRepository, StreamRepository
 from config import Database, get_database_url
 
 
 async def main():
-    db = Database(get_database_url())
+    db = Database(get_database_url('test_base'))
     await db.init_models()
     async with db.session() as session:
         repo = StreamRepository(session)
         user_repo = UserRepository(session)
-        user = await user_repo.create('asdf', 'asdf', 123)
+        blinov = await user_repo.create('asdf', 'Блинов', 123)
+        kumar = await user_repo.create('asdf123', 'Нурматов', 1234)
+        artem = await user_repo.create('asdf123123', 'Ипатьев', 1235)
 
-        streams = await repo.create_streams_if_not_exists(['asdf', 'gfg'])
-        await repo.create_streams_user(user.id, [streams[0].id, streams[1].id])
+        streams = await repo.create_streams_if_not_exists([
+            StreamDto(type='САПР', full_stream='М_АИП_Г#алгоритмизация'),
+            StreamDto(type='МАТ', full_stream='М_МАТ_Г#матан'),
+            StreamDto(type='ФИЗ', full_stream='М_ФИЗ_Г#физика'),
+        ])
+        stream_ids = list(map(lambda stream: stream.id, streams))
+
+        await repo.create_streams_user(blinov.id, stream_ids)
+        await repo.create_streams_user(kumar.id, stream_ids)
+        await repo.create_streams_user(artem.id, stream_ids)
+
+        await repo.set_user_activities(blinov.id, streams[0].id, 10)
+        await repo.set_user_activities(blinov.id, streams[2].id, 5)
+        await repo.set_user_activities(artem.id, streams[2].id, 10)
+        await repo.set_user_activities(kumar.id, streams[0].id, 1)
+        await repo.set_user_activities(kumar.id, streams[1].id, 50)
+
+        print(await repo.median_activity(streams[0].id))
+        print(await repo.median_activity(streams[1].id))
+        print(await repo.median_activity(streams[2].id))
+
         # await repo.create_streams_user(user.id, [streams[0].id])
 
-        print(await repo.get_user_streams(user.id))
-        # print(streams)
-        # await repo.create_stream_user()
-        # res = await repo.get_user_streams(1)
-        # for act in res:
-        #     print(act)
+        # print(await repo.get_user_streams(user.id))
 
-        # repo = UserRepository(session)
-        # await repo.create('asdf', 'asdf', 123)
-        # await repo.get_user_name(123)
 
 
     # for mail in ['grsemorozov@edu.hse.ru', 'a.romanov@hse.ru', 'romashikhin.m.y@hse.ru']:

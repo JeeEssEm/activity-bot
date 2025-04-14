@@ -4,3 +4,7 @@ class UserNotFound(Exception):
 
 class ActivityAlreadyExists(Exception):
     pass
+
+
+class CannotAddActivityToNotSubscribedStudent(Exception):
+    pass
