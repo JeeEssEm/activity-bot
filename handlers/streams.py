@@ -9,6 +9,7 @@ from services import UserService
 from repositories import StreamRepository
 from dtos import ChooseStreams
 from keyboards.list_kb import build_start_choose_kb
+from keyboards.discipline_kb import build_discipline_kb
 from constants import LEGEND
 
 router = Router()
@@ -67,6 +68,7 @@ async def confirm(
 
 
 @router.message(Command('my_disciplines'))
+@router.callback_query(F.data == 'my_disciplines')
 async def get_my_disciplines(
         message: Message,
         state: FSMContext,
@@ -91,20 +93,6 @@ async def get_my_disciplines(
             confirm_cb='my_disciplines_add'
         )
     )
-    # data: ChooseStreams = await user_service.get_user_disciplines(
-    #     message.from_user.id, from_db=True)
-    # await state.update_data(chosen_streams=data)
-    #
-    # await message.reply(
-    #     f'🗺️Навигатор по типам:{LEGEND}\n'
-    #     f'',
-    #     reply_markup=build_list_kb(
-    #         pages=data.content,
-    #         chosen=data.chosen_streams,
-    #         page=0,
-    #         page_cb='my_disciplines_page|'
-    #     )
-    # )
 
 
 @router.callback_query(F.data.startswith('get_subj|'))
@@ -121,13 +109,13 @@ async def get_subject(
     median = await stream_repo.get_median_activity(stream.id)
     current_activity = await stream_repo.get_user_stream_activity(cb.message.chat.id, stream.id)
 
-    await state.clear()
+    # await state.clear()
     await cb.message.delete()
     await bot.send_message(
         chat_id=cb.message.chat.id,
         text=f'<b>{stream.title}</b>\n'
              f'👤Ваша активность: {current_activity}\n'
-             f'📈 Медианная активность: {median}\n'
+             f'📈 Медианная активность: {median}\n',
+        reply_markup=build_discipline_kb(stream.id)
         # TODO: сделать нормальную страницу с дисциплиной + кнопка назад
     )
-    await state.clear()

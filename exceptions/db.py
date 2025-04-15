@@ -8,3 +8,7 @@ class ActivityAlreadyExists(Exception):
 
 class CannotAddActivityToNotSubscribedStudent(Exception):
     pass
+
+
+class StreamNotFound(Exception):
+    pass

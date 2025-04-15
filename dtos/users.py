@@ -76,8 +76,8 @@ class StreamDto:
 class StreamDtoDB(StreamDto):
     id: int
 
-    def get_callback(self, page: int) -> str:
-        return f'get_subj|{self.short_stream}'
+    def get_callback(self, page: int) -> str:  # накостылил
+        return f'get_subj|{page}|{self.short_stream}'
 
 
 @dataclass
@@ -89,3 +89,17 @@ class StreamsDto:
 class ChooseStreams:
     content: list[list[StreamDto | StreamDtoDB]]
     chosen_streams: dict[str, [bool, StreamDto | StreamDtoDB]]
+
+    def delete_stream_by_id(self, stream_id: int):
+        flag = False
+        to_delete: StreamDtoDB | None = None
+        for page in self.content:
+            if flag:
+                break
+            for stream in page:
+                if isinstance(stream, StreamDtoDB) and stream.id == stream_id:
+                    to_delete = stream
+                    page.remove(stream)
+                    flag = True
+                    break
+        del self.chosen_streams[to_delete.short_stream]

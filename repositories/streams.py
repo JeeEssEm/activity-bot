@@ -1,13 +1,13 @@
 from typing import Type
 
-from sqlalchemy import select, insert
+from sqlalchemy import select, insert, delete
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import func
 
 from models import Activity
 from .base import BaseRepository
 import models
-from exceptions.db import UserNotFound, ActivityAlreadyExists, CannotAddActivityToNotSubscribedStudent
+from exceptions.db import UserNotFound, StreamNotFound, CannotAddActivityToNotSubscribedStudent
 from dtos import StreamDto, StreamDtoDB, ActivityDto
 
 
@@ -40,7 +40,7 @@ class StreamRepository(BaseRepository):
                 for t in streams_to_create
             ]
             self.session.add_all(streams_to_create)
-            print(streams_to_create)
+            # print(streams_to_create)
             # try:
             await self.session.commit()
             res = await self.session.scalars(q)
@@ -65,6 +65,7 @@ class StreamRepository(BaseRepository):
             raise CannotAddActivityToNotSubscribedStudent()
         return obj
 
+    # region TODO: вынести в ActivityRepository
     async def get_user_stream_activity(self, user_id: int, stream_id: int) -> float:
         user = await self._get_user_activity(user_id, stream_id)
         return user.activities
@@ -101,3 +102,18 @@ class StreamRepository(BaseRepository):
             )
         ))
         return await self.session.scalar(median)
+    # end region
+
+    async def get_stream_by_id(self, stream_id: int) -> StreamDtoDB:
+        stream: models.Stream = await self.session.get(models.Stream, stream_id)
+        if stream is None:
+            raise StreamNotFound()
+        return stream.convert_to_dto()
+
+    async def delete_user_stream(self, user_id: int, stream_id: int):
+        q = delete(models.Activity).where(
+            models.Activity.user_id == user_id,
+            models.Activity.stream_id == stream_id
+        )
+        await self.session.execute(q)
+        await self.session.commit()
