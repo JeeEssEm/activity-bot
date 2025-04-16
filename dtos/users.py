@@ -79,6 +79,14 @@ class StreamDtoDB(StreamDto):
     def get_callback(self, page: int) -> str:  # накостылил
         return f'get_subj|{page}|{self.short_stream}'
 
+    def __hash__(self):
+        return hash(self.full_stream)
+
+    def __eq__(self, other):
+        if isinstance(other, str):
+            return self.full_stream == other
+        return self.full_stream == other.full_stream
+
 
 @dataclass
 class StreamsDto:

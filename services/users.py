@@ -9,6 +9,8 @@ from dtos import StreamsDto, StreamType, StreamDto, ChooseStreams, StreamDtoDB
 
 
 class UserService:
+    ITEMS_PER_PAGE = 5
+
     def __init__(
             self,
             user_repo: UserRepository,
@@ -31,7 +33,7 @@ class UserService:
         user = await self.user_repo.get_user_by_id(tg_id)
         return user.email
 
-    async def get_streams_from_api(self, email: str) -> StreamsDto:
+    async def get_streams_from_api(self, email: str) -> list[StreamDto]:
         today = datetime.today()
         raw_streams = await self.api.get_user_schedule(
             email,
@@ -45,7 +47,7 @@ class UserService:
             )
             for s in raw_streams.schedule
         )
-        return StreamsDto(list(uniq_streams))
+        return list(uniq_streams)
 
     async def add_streams(self, user_id: int, streams: list[StreamDto]):
         streams = await self.stream_repo.create_streams_if_not_exists(streams)
@@ -62,7 +64,7 @@ class UserService:
     ) -> (list[list[StreamDtoDB]], dict[bool, StreamDtoDB]):
         streams = await self.stream_repo.get_user_streams(user_id)
         pages, chosen = self.build_pages(
-            streams, 5,
+            streams, self.ITEMS_PER_PAGE,
             check_active=lambda _: False,
             get_key=lambda stream: stream.short_stream
         )
@@ -94,10 +96,22 @@ class UserService:
         email = await self.get_user_email_by_id(user_id)
         streams = await self.get_streams_from_api(email)
 
-        items_per_page = 5
         pages, chosen = self.build_pages(
-            streams.streams, items_per_page,
+            streams, self.ITEMS_PER_PAGE,
             check_active=lambda stream: stream.full_stream in active_streams,
+            get_key=lambda stream: stream.short_stream
+        )
+        return ChooseStreams(pages, chosen)
+
+    async def get_unselected_user_disciplines(self, user_id: int) -> ChooseStreams:
+        streams_from_db = set(await self.stream_repo.get_user_streams(user_id))
+        email = await self.get_user_email_by_id(user_id)
+        streams_from_api = set(await self.get_streams_from_api(email))
+
+        streams_from_api -= streams_from_db
+        pages, chosen = self.build_pages(
+            list(streams_from_api), self.ITEMS_PER_PAGE,
+            check_active=lambda _: False,
             get_key=lambda stream: stream.short_stream
         )
         return ChooseStreams(pages, chosen)

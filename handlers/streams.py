@@ -1,3 +1,5 @@
+from typing import Callable, Awaitable
+
 from aiogram import types, Dispatcher, Router, F, Bot
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
@@ -10,9 +12,39 @@ from repositories import StreamRepository
 from dtos import ChooseStreams
 from keyboards.list_kb import build_start_choose_kb
 from keyboards.discipline_kb import build_discipline_kb
-from constants import LEGEND
+from constants import LEGEND, NAVIGATOR
 
 router = Router()
+
+
+async def show_my_disciplines(
+        user_id: int,
+        state: FSMContext,
+        send_func: Callable[..., Awaitable[Message]],
+        user_service: UserService
+):
+    pages, chosen = await user_service.get_active_user_disciplines(user_id)
+    await state.update_data(
+        chosen_streams=ChooseStreams(
+            content=pages,
+            chosen_streams=chosen
+        ),
+        confirm={
+            'cb': 'my_disciplines_confirm',
+            'text': '➕Добавить'
+        }
+    )
+
+    await send_func(
+        NAVIGATOR,
+        reply_markup=build_start_choose_kb(
+            pages, chosen,
+            0,
+            page_cb='my_disciplines_page|',
+            confirm='➕Добавить',
+            confirm_cb='my_disciplines_add',
+        )
+    )
 
 
 @router.callback_query(F.data.startswith('modify_subjs|'))
@@ -20,18 +52,35 @@ async def modify_list(
         cb: CallbackQuery,
         state: FSMContext
 ):
+    state_data = await state.get_data()
     args = cb.data.split('|')
     title = args[-1]
     page = int(args[-2])
-    data: ChooseStreams = (await state.get_data()).get('chosen_streams')
+    data: ChooseStreams = state_data.get('chosen_streams')
     data.chosen_streams[title][0] = (
         not data.chosen_streams[title][0]
     )
     await state.update_data(chosen_streams=data)
 
-    await cb.message.edit_reply_markup(reply_markup=build_start_choose_kb(
-        pages=data.content, chosen=data.chosen_streams, page=page,
-        page_cb='my_disciplines_page|'))
+    # confirm data
+    confirm_cb = 'my_disciplines_confirm'
+    confirm_text = 'Готово'
+    confirm_data = state_data.get('confirm')
+    if confirm_data is not None:
+        confirm_cb = confirm_data.get('cb')
+        confirm_text = confirm_data.get('text')
+    # other buttons
+    other_buttons = state_data.get('other_buttons')
+
+
+    await cb.message.edit_reply_markup(
+        reply_markup=build_start_choose_kb(
+            pages=data.content, chosen=data.chosen_streams, page=page,
+            page_cb='my_disciplines_page|',
+            confirm_cb=confirm_cb, confirm=confirm_text,
+            other_buttons=other_buttons
+        )
+    )
 
 
 @router.callback_query(F.data.startswith('my_disciplines_page|'))
@@ -39,12 +88,30 @@ async def get_discipline_page(
         cb: CallbackQuery,
         state: FSMContext
 ):
-    data: ChooseStreams = (await state.get_data()).get('chosen_streams')
+    state_data = await state.get_data()
+
+    # confirm data
+    confirm_cb = 'my_disciplines_confirm'
+    confirm_text = 'Готово'
+    confirm_data = state_data.get('confirm')
+    if confirm_data is not None:
+        confirm_cb = confirm_data.get('cb')
+        confirm_text = confirm_data.get('text')
+    # other buttons
+    other_buttons = state_data.get('other_buttons')
+
+    data: ChooseStreams = state_data.get('chosen_streams')
     page = int(cb.data.split('|')[-1])
 
-    await cb.message.edit_reply_markup(reply_markup=build_start_choose_kb(
-        pages=data.content, chosen=data.chosen_streams, page=page,
-        page_cb='my_disciplines_page|'))
+    await cb.message.edit_reply_markup(
+        reply_markup=build_start_choose_kb(
+            pages=data.content, chosen=data.chosen_streams, page=page,
+            page_cb='my_disciplines_page|',
+            confirm=confirm_text,
+            confirm_cb=confirm_cb,
+            other_buttons=other_buttons
+        )
+    )
 
 
 @router.callback_query(F.data == 'my_disciplines_confirm')
@@ -68,30 +135,16 @@ async def confirm(
 
 
 @router.message(Command('my_disciplines'))
-@router.callback_query(F.data == 'my_disciplines')
 async def get_my_disciplines(
         message: Message,
         state: FSMContext,
         user_service: FromDishka[UserService],
 ):
-    pages, chosen = await user_service.get_active_user_disciplines(
-        message.from_user.id
-    )
-    await state.update_data(chosen_streams=ChooseStreams(
-        content=pages,
-        chosen_streams=chosen
-    ))
-    await message.reply(
-        f'🗺️Навигатор по типам:{LEGEND}\n'
-        f'<b>———</b>\n'
-        f'📚<b>Твои дисциплины для отслеживания</b>',
-        reply_markup=build_start_choose_kb(
-            pages, chosen,
-            0,
-            page_cb='my_disciplines_page|',
-            confirm='Добавить',
-            confirm_cb='my_disciplines_add'
-        )
+    await show_my_disciplines(
+        user_id=message.from_user.id,
+        state=state,
+        send_func=message.reply,
+        user_service=user_service
     )
 
 
@@ -118,4 +171,54 @@ async def get_subject(
              f'📈 Медианная активность: {median}\n',
         reply_markup=build_discipline_kb(stream.id)
         # TODO: сделать нормальную страницу с дисциплиной + кнопка назад
+    )
+
+
+@router.callback_query(F.data == 'my_disciplines_add')
+async def my_disciplines_add(
+        cb: CallbackQuery,
+        bot: Bot,
+        state: FSMContext,
+        service: FromDishka[UserService],
+):
+    streams: ChooseStreams = await service.get_unselected_user_disciplines(
+        user_id=cb.message.chat.id
+    )
+    await state.update_data(
+        chosen_streams=streams,
+        confirm={
+            'cb': 'my_disciplines_confirm',
+            'text': 'Готово'
+        },
+        other_buttons=[
+            [('my_disciplines_back', '↩️Назад')]
+        ]
+    )
+    await cb.message.edit_reply_markup(
+        reply_markup=build_start_choose_kb(
+            streams.content, streams.chosen_streams,
+            0,
+            page_cb='my_disciplines_page|',
+            confirm='Готово',
+            confirm_cb='my_disciplines_confirm',
+            other_buttons=[
+                [('my_disciplines_back', '↩️Назад')]
+            ]
+        )
+    )
+
+
+@router.callback_query(F.data == 'my_disciplines_back')
+async def my_disciplines_back(
+        cb: CallbackQuery,
+        state: FSMContext,
+        user_service: FromDishka[UserService],
+):
+    await state.clear()
+    await cb.message.delete()
+    await show_my_disciplines(
+        user_id=cb.from_user.id,
+        state=state,
+        send_func=lambda *args, **kwargs: cb.message.answer(*args, **kwargs),
+        user_service=user_service
     )

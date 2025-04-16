@@ -10,7 +10,7 @@ from repositories import StreamRepository
 from dtos import ChooseStreams
 from keyboards.list_kb import build_start_choose_kb
 from keyboards.discipline_kb import build_discipline_kb, ensure_delete_kb
-from constants import LEGEND
+from .streams import show_my_disciplines
 
 router = Router()
 
@@ -37,16 +37,25 @@ async def stop_tracking(
         cb: CallbackQuery,
         bot: Bot,
         state: FSMContext,
-        repo: FromDishka[StreamRepository]
+        repo: FromDishka[StreamRepository],
+        user_service: FromDishka[UserService]
 ):
     stream_id = int(cb.data.split('_')[-1])
     await repo.delete_user_stream(stream_id=stream_id, user_id=cb.message.chat.id)
     chosen_streams: ChooseStreams = (await state.get_data()).get('chosen_streams')
     chosen_streams.delete_stream_by_id(stream_id)
 
+    await cb.message.delete()
     await bot.send_message(
         chat_id=cb.message.chat.id,
-        text=f'Дисциплина больше не отслеживается'
+        text=f'Дисциплина больше не отслеживается!'
+    )
+    await state.clear()
+    await show_my_disciplines(
+        user_id=cb.from_user.id,
+        state=state,
+        send_func=lambda *args, **kwargs: cb.message.answer(*args, **kwargs),
+        user_service=user_service
     )
 
 

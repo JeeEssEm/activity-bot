@@ -10,7 +10,7 @@ def build_start_choose_kb(
         page_cb: str,
         confirm: str = None,
         confirm_cb: str = None,
-        other_buttons: list[str, str] = None
+        other_buttons: list[list[tuple[str, str]]] = None
 ) -> InlineKeyboardMarkup:
     if other_buttons is None:
         other_buttons = []
@@ -43,6 +43,13 @@ def build_start_choose_kb(
         inline_kb.extend(elements)
     if arrow_buttons:
         inline_kb.append(arrow_buttons)
+    if other_buttons:
+        for row in other_buttons:
+            button_row = []
+            for cb, text in row:
+                button_row.append(InlineKeyboardButton(text=text, callback_data=cb))
+            inline_kb.append(button_row)
+
     inline_kb.append([InlineKeyboardButton(
             text=confirm or 'Готово',
             callback_data=confirm_cb or 'my_disciplines_confirm'

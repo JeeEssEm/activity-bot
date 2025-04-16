@@ -22,7 +22,7 @@ def build_discipline_kb(
         # [InlineKeyboardButton('Уведомления', callback_data=f'')], # TODO: in future :)
         [InlineKeyboardButton(
             text='↩️Назад',
-            callback_data=f'my_disciplines'
+            callback_data=f'my_disciplines_back'
         )],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
