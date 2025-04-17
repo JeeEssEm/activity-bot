@@ -127,7 +127,7 @@ async def set_activity(
         repo: FromDishka[StreamRepository]
 ):
     amount = msg.text.strip()
-    if not amount.isdigit():
+    if not amount.isdigit() or not amount.isascii():
         await msg.answer('Количество активностей - это целое неотрицательное число! Повторите ввод')
         return
     amount = int(amount)
