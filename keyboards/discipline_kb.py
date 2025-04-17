@@ -33,8 +33,15 @@ def ensure_delete_kb(
 ) -> InlineKeyboardMarkup:
     buttons = [
         [
-            InlineKeyboardButton(text='✔️Да', callback_data=f'confirm_stop_tracking_{stream.id}'),
-            InlineKeyboardButton(text='❌Нет', callback_data=f'get_subj|{stream.short_stream}'),
+            InlineKeyboardButton(text='✔️Да', callback_data=f'confirm_stop_tracking'),
+            InlineKeyboardButton(text='❌Нет', callback_data=f'cancel_delete_subject'),
         ]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def change_activities() -> InlineKeyboardMarkup:
+    buttons = [
+        [InlineKeyboardButton(text='↩️Назад', callback_data='cancel_set_activity')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)

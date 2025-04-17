@@ -9,7 +9,7 @@ from dishka.integrations.aiogram import FromDishka
 
 from services import UserService
 from repositories import StreamRepository
-from dtos import ChooseStreams
+from dtos import ChooseStreams, StreamDto, StreamDtoDB
 from keyboards.list_kb import build_start_choose_kb
 from keyboards.discipline_kb import build_discipline_kb
 from constants import LEGEND, NAVIGATOR
@@ -44,6 +44,28 @@ async def show_my_disciplines(
             confirm='➕Добавить',
             confirm_cb='my_disciplines_add',
         )
+    )
+
+
+async def show_subject_details(
+    user_id: int,
+    state: FSMContext,
+    stream: StreamDtoDB,
+    stream_repo: StreamRepository,
+    send_func: Callable[..., Awaitable[Message]]
+):
+    if not stream:
+        await send_func('Ошибка: дисциплина не найдена.')
+        return
+    await state.update_data(current_stream=stream)
+    median = await stream_repo.get_median_activity(stream.id)
+    current_activity = await stream_repo.get_user_stream_activity(user_id, stream.id)
+
+    await send_func(
+        text=f'<b>{stream.title} ({stream.type})</b>\n'
+             f'👤Ваша активность: {current_activity}\n'
+             f'📈 Медианная активность: {median}\n',
+        reply_markup=build_discipline_kb(stream.id)
     )
 
 
@@ -133,6 +155,13 @@ async def confirm(
         text='Дисциплины для отслеживания успешно изменены!'
     )
 
+    await show_my_disciplines(
+        user_id=cb.from_user.id,
+        state=state,
+        send_func=lambda text, reply_markup: bot.send_message(cb.from_user.id, text=text, reply_markup=reply_markup),
+        user_service=service
+    )
+
 
 @router.message(Command('my_disciplines'))
 async def get_my_disciplines(
@@ -155,22 +184,19 @@ async def get_subject(
         state: FSMContext,
         stream_repo: FromDishka[StreamRepository]
 ):
-    subject_stream = cb.data.split('|')[-1]
+    short_stream = cb.data.split('|')[-1]
     data: ChooseStreams = (await state.get_data()).get('chosen_streams')
-
-    stream = data.chosen_streams[subject_stream][1]
-    median = await stream_repo.get_median_activity(stream.id)
-    current_activity = await stream_repo.get_user_stream_activity(cb.message.chat.id, stream.id)
-
-    # await state.clear()
+    stream = data.chosen_streams[short_stream][1]
+    await state.clear()
+    await state.update_data(current_stream=stream)
     await cb.message.delete()
-    await bot.send_message(
-        chat_id=cb.message.chat.id,
-        text=f'<b>{stream.title}</b>\n'
-             f'👤Ваша активность: {current_activity}\n'
-             f'📈 Медианная активность: {median}\n',
-        reply_markup=build_discipline_kb(stream.id)
-        # TODO: сделать нормальную страницу с дисциплиной + кнопка назад
+
+    await show_subject_details(
+        user_id=cb.from_user.id,
+        stream=stream,
+        state=state,
+        stream_repo=stream_repo,
+        send_func=lambda *args, **kwargs: bot.send_message(cb.message.chat.id, *args, **kwargs)
     )
 
 
