@@ -13,7 +13,7 @@ def build_discipline_kb(
         )],
         [InlineKeyboardButton(
             text='🚶‍♂️🚶‍♂️🚶‍♂️Очередь за активностью',
-            callback_data=f'queue_activity_{stream_id}'
+            callback_data=f'queue_activity'
         )],
         [InlineKeyboardButton(
             text='❌Перестать отслеживать',

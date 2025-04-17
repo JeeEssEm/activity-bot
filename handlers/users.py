@@ -56,7 +56,8 @@ async def process_email(
         await state.update_data(chosen_streams=data)
 
         await message.reply(
-            NAVIGATOR,
+            f'Теперь выберете дисциплины для отслеживания\n'
+            f'{NAVIGATOR}',
             reply_markup=build_start_choose_kb(
                 pages=data.content,
                 chosen=data.chosen_streams,

@@ -57,7 +57,7 @@ class UserService:
         )
 
     async def user_exists(self, tg_id: int) -> bool:
-        ...
+        return  await self.user_repo.user_exists_by_id(tg_id)
 
     async def get_active_user_disciplines(
             self, user_id: int

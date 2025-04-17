@@ -6,3 +6,10 @@ class ActivityDto:
     stream_id: int
     user_id: int
     score: int
+
+
+@dataclass
+class QueueActivityElementDto:
+    user_id: int
+    fullname: str
+    activities: int

@@ -3,6 +3,7 @@ import asyncio
 from dtos import StreamDto
 from repositories import UserRepository, StreamRepository
 from config import Database, get_database_url
+from repositories.activities import ActivityRepository
 
 
 async def main():
@@ -11,6 +12,7 @@ async def main():
     async with db.session() as session:
         repo = StreamRepository(session)
         user_repo = UserRepository(session)
+        activity_repo = ActivityRepository(session)
         blinov = await user_repo.create('asdf', 'Блинов', 123)
         kumar = await user_repo.create('asdf123', 'Нурматов', 1234)
         artem = await user_repo.create('asdf123123', 'Ипатьев', 1235)
@@ -32,10 +34,12 @@ async def main():
         await repo.set_user_activities(kumar.id, streams[0].id, 1)
         await repo.set_user_activities(kumar.id, streams[1].id, 50)
 
-        print(await repo.get_median_activity(streams[0].id))
-        print(await repo.get_median_activity(streams[1].id))
-        print(await repo.get_median_activity(streams[2].id))
+        # print(await repo.get_median_activity(streams[0].id))
+        # print(await repo.get_median_activity(streams[1].id))
+        # print(await repo.get_median_activity(streams[2].id))
 
+        for t in await activity_repo.get_queue_by_stream(streams[0].id):
+            print(t.fullname, t.activities)
         # await repo.create_streams_user(user.id, [streams[0].id])
 
         # print(await repo.get_user_streams(user.id))

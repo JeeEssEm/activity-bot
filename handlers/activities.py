@@ -1,3 +1,5 @@
+import datetime as dt
+
 from aiogram import types, Dispatcher, Router, F, Bot
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
@@ -6,8 +8,8 @@ from aiogram.fsm.state import StatesGroup, State
 
 from dishka.integrations.aiogram import FromDishka
 
-from services import UserService
-from repositories import StreamRepository
+from services import UserService, ActivityService
+from repositories import StreamRepository, ActivityRepository
 from dtos import ChooseStreams, StreamDtoDB
 from keyboards.list_kb import build_start_choose_kb
 from keyboards.discipline_kb import build_discipline_kb, ensure_delete_kb, change_activities
@@ -62,15 +64,21 @@ async def stop_tracking(
     )
 
 
-@router.callback_query(F.data.startswith('queue_activity_'))
+@router.callback_query(F.data == 'queue_activity')
 async def queue_activity(
         cb: CallbackQuery,
         bot: Bot,
         state: FSMContext,
-        service: FromDishka[UserService]
+        service: FromDishka[ActivityService]
 ):
-    ...
-
+    state_data = await state.get_data()
+    stream = state_data.get('current_stream')
+    queue = await service.get_queue_by_stream_id(stream.id, cb.from_user.id)
+    current_time = dt.datetime.now().strftime('%d.%m.%Y %H:%M')
+    await cb.message.reply(
+        text=f'Очередь по дисциплине <b>{stream.title} ({stream.type})</b> на момент <b>{current_time}</b>\n'
+             f'{queue}'
+    )
 
 @router.callback_query(F.data.startswith('set_activity_'))
 async def set_activity(

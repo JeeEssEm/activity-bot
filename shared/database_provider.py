@@ -3,7 +3,7 @@ from typing import AsyncIterable
 from dishka import Provider, Scope, provide
 
 from config import Database
-from repositories import UserRepository, StreamRepository
+from repositories import UserRepository, StreamRepository, ActivityRepository
 
 
 class DatabaseProvider(Provider):
@@ -24,3 +24,8 @@ class DatabaseProvider(Provider):
     async def provide_stream_repo(self) -> AsyncIterable[StreamRepository]:
         async with self.db.session() as session:
             yield StreamRepository(session)
+
+    @provide(scope=Scope.REQUEST)
+    async def provide_activity_repo(self) -> AsyncIterable[ActivityRepository]:
+        async with self.db.session() as session:
+            yield ActivityRepository(session)

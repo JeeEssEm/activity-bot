@@ -169,6 +169,10 @@ async def get_my_disciplines(
         state: FSMContext,
         user_service: FromDishka[UserService],
 ):
+    if not await user_service.user_exists(message.from_user.id):
+        await message.reply('Сначала зарегайтесь через /start')
+        return
+
     await show_my_disciplines(
         user_id=message.from_user.id,
         state=state,
