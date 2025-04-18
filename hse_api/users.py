@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import aiohttp
 
 from .auth import HseAuth
@@ -38,12 +40,12 @@ class HseAPI:
 
                 json = await response.json()
                 if json.get('error'):
-                    if json['error']['name'] == 'SendCommandError':
+                    if json['error']['name'] == 'SendCommandError' or json['error']['name'] == 'NotFoundException':
                         raise EmailNotFoundInHseDB(
                             'Емейл не найден. Повторите ввод'
                         )
                     else:
-                        print(json)
+                        print('----\n', json, '\n', email, datetime.now(), '----')
                         raise InternalError(
                             'Произошла внутренняя ошибка. Напишите админу'
                         )
@@ -67,6 +69,7 @@ class HseAPI:
                     if data['error']['name'] == 'StudentNotFound':
                         raise StudentNotFound('Студент не найден')
                     else:
+                        print('----\n', data, '\n', email, datetime.now(), '----')
                         raise InternalError(
                             'Произошла внутренняя ошибка. Напишите админу'
                         )
