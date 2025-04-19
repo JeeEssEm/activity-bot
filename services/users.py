@@ -115,3 +115,6 @@ class UserService:
             get_key=lambda stream: stream.short_stream
         )
         return ChooseStreams(pages, chosen)
+
+    async def delete_user_by_id(self, user_id: int):
+        await self.user_repo.delete_user_by_id(user_id)

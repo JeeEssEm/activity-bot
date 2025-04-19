@@ -37,9 +37,10 @@ async def main():
         # print(await repo.get_median_activity(streams[0].id))
         # print(await repo.get_median_activity(streams[1].id))
         # print(await repo.get_median_activity(streams[2].id))
-
-        for t in await activity_repo.get_queue_by_stream(streams[0].id):
-            print(t.fullname, t.activities)
+        print(kumar.id)
+        # for t in await activity_repo.get_queue_by_stream(streams[0].id):
+        #     print(t.fullname, t.activities)
+        await user_repo.delete_user_by_id(kumar.id)
         # await repo.create_streams_user(user.id, [streams[0].id])
 
         # print(await repo.get_user_streams(user.id))

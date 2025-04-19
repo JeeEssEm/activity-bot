@@ -34,7 +34,10 @@ async def stop_tracking(
         text=f'Вы уверены, что хотите перестать отслеживать: {stream.title} {stream.type}'
     )
     await cb.message.edit_reply_markup(
-        reply_markup=ensure_delete_kb(stream)
+        reply_markup=ensure_delete_kb(
+            yes_cb='confirm_stop_tracking',
+            no_cb='cancel_delete_subject'
+        )
     )
 
 

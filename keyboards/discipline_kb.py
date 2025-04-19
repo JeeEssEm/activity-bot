@@ -29,12 +29,13 @@ def build_discipline_kb(
 
 
 def ensure_delete_kb(
-        stream: StreamDtoDB
+        yes_cb: str,
+        no_cb: str
 ) -> InlineKeyboardMarkup:
     buttons = [
         [
-            InlineKeyboardButton(text='✔️Да', callback_data=f'confirm_stop_tracking'),
-            InlineKeyboardButton(text='❌Нет', callback_data=f'cancel_delete_subject'),
+            InlineKeyboardButton(text='✔️Да', callback_data=yes_cb),
+            InlineKeyboardButton(text='❌Нет', callback_data=no_cb),
         ]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)

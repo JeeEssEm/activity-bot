@@ -15,7 +15,10 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(320), unique=True)
     fullname: Mapped[str] = mapped_column(String(244))
 
-    activities: Mapped[list['Activity']] = relationship()
+    activities: Mapped[list['Activity']] = relationship(
+        back_populates='user',
+        cascade='all, delete-orphan'
+    )
 
     def convert_to_dto(self) -> UserDto:
         return UserDto(email=self.email, fullname=self.fullname, id=self.id)
