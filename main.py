@@ -9,7 +9,7 @@ from dishka.integrations.aiogram import setup_dishka
 
 from shared import APIProvider, ServiceProvider, DatabaseProvider
 from config import settings, get_database_url, Database
-from handlers import user_router, stream_router, activity_router
+from handlers import user_router, stream_router, activity_router, feedback_router
 
 
 async def init_db(db: FromDishka[Database] = None):
@@ -37,6 +37,7 @@ async def main():
     dp.include_router(user_router)
     dp.include_router(stream_router)
     dp.include_router(activity_router)
+    dp.include_router(feedback_router)
 
     print('polling...')
     await dp.start_polling(bot)

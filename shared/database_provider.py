@@ -4,6 +4,7 @@ from dishka import Provider, Scope, provide
 
 from config import Database
 from repositories import UserRepository, StreamRepository, ActivityRepository
+from repositories.feedbacks import FeedbackRepository
 
 
 class DatabaseProvider(Provider):
@@ -29,3 +30,8 @@ class DatabaseProvider(Provider):
     async def provide_activity_repo(self) -> AsyncIterable[ActivityRepository]:
         async with self.db.session() as session:
             yield ActivityRepository(session)
+
+    @provide(scope=Scope.REQUEST)
+    async def provide_feedback_repo(self) -> AsyncIterable[FeedbackRepository]:
+        async with self.db.session() as session:
+            yield FeedbackRepository(session)
