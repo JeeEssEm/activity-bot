@@ -66,9 +66,9 @@ class StreamRepository(BaseRepository):
         return obj
 
     # region TODO: вынести в ActivityRepository
-    async def get_user_stream_activity(self, user_id: int, stream_id: int) -> float:
-        user = await self._get_user_activity(user_id, stream_id)
-        return user.activities
+    async def get_user_stream_activity(self, user_id: int, stream_id: int) -> ActivityDto:
+        activity = await self._get_user_activity(user_id, stream_id)
+        return activity.convert_to_dto()
 
     async def set_user_activities(self, user_id: int, stream_id: int, activities: int):
         user = await self._get_user_activity(user_id, stream_id)

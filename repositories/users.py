@@ -1,5 +1,3 @@
-from sqlalchemy import delete
-
 from dtos import UserDto
 import models
 from .base import BaseRepository

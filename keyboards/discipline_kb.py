@@ -4,8 +4,13 @@ from dtos import StreamDtoDB
 
 
 def build_discipline_kb(
-        stream_id: int
+        stream_id: int,
+        notify: bool
 ) -> InlineKeyboardMarkup:
+    notification_text = '🔕Заглушить'
+    if not notify:
+        notification_text = '🔔Включить уведомления'
+
     buttons = [
         [InlineKeyboardButton(
             text='🔄Изменить количество активностей',
@@ -19,7 +24,10 @@ def build_discipline_kb(
             text='❌Перестать отслеживать',
             callback_data=f'stop_tracking_{stream_id}'
         )],
-        # [InlineKeyboardButton('Уведомления', callback_data=f'')], # TODO: in future :)
+        [InlineKeyboardButton(
+            text=notification_text,
+            callback_data=f'change_notification_status_{int(not notify)}'
+        )],
         [InlineKeyboardButton(
             text='↩️Назад',
             callback_data=f'my_disciplines_back'

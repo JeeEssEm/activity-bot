@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped, relationship, mapped_column, backref
+from sqlalchemy.orm import Mapped, relationship, mapped_column
 
 if TYPE_CHECKING:
     from .users import User
@@ -22,6 +22,7 @@ class Activity(Base):
         primary_key=True
     )
     activities: Mapped[int]
+    notify: Mapped[bool] = mapped_column(default=True)
 
     user: Mapped['User'] = relationship()
     stream: Mapped['Stream'] = relationship(back_populates='activities')
@@ -30,5 +31,6 @@ class Activity(Base):
         return ActivityDto(
             user_id=self.user_id,
             stream_id=self.stream_id,
-            score=self.activities
+            score=self.activities,
+            notify=self.notify
         )

@@ -177,3 +177,37 @@ async def cancel_delete_discipline(
         stream_repo=repo,
         send_func=lambda *args, **kwargs: bot.send_message(cb.from_user.id, *args, **kwargs)
     )
+
+
+@router.callback_query(F.data.startswith('change_notification_status_'))
+async def change_notification_status(
+        cb: CallbackQuery,
+        state: FSMContext,
+        repo: FromDishka[ActivityRepository],
+):
+    status = bool(int(cb.data.split('_')[-1]))
+
+    state_data = await state.get_data()
+    stream = state_data.get('current_stream')
+    await repo.change_mute_activity(cb.from_user.id, stream.id)
+    await cb.message.edit_reply_markup(reply_markup=build_discipline_kb(
+        stream.id, status
+    ))
+
+
+@router.callback_query(F.data == 'turn_on_all_notifications')
+async def turn_on_all_notifications(
+        cb: CallbackQuery,
+        repo: FromDishka[ActivityRepository]
+):
+    await repo.change_all_activities(cb.from_user.id, mute=False)
+    await cb.message.reply('Теперь вам снова будут приходить уведомления после окончания пары!')
+
+
+@router.callback_query(F.data == 'turn_off_all_notifications')
+async def turn_off_all_notifications(
+        cb: CallbackQuery,
+        repo: FromDishka[ActivityRepository]
+):
+    await repo.change_all_activities(cb.from_user.id, mute=True)
+    await cb.message.reply('Теперь вам не будут приходить уведомления после окончания пары!')

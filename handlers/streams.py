@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 from dishka.integrations.aiogram import FromDishka
 
 from services import UserService
-from repositories import StreamRepository
+from repositories import StreamRepository, ActivityRepository
 from dtos import ChooseStreams, StreamDto, StreamDtoDB
 from keyboards.list_kb import build_start_choose_kb
 from keyboards.discipline_kb import build_discipline_kb
@@ -24,6 +24,10 @@ async def show_my_disciplines(
         user_service: UserService
 ):
     pages, chosen = await user_service.get_active_user_disciplines(user_id)
+    notification_buttons = [
+                [('turn_off_all_notifications', '🔕Заглушить все уведы')],
+                [('turn_on_all_notifications', '🔔Включить все уведы')]
+            ]
     await state.update_data(
         chosen_streams=ChooseStreams(
             content=pages,
@@ -32,7 +36,8 @@ async def show_my_disciplines(
         confirm={
             'cb': 'my_disciplines_confirm',
             'text': '➕Добавить'
-        }
+        },
+        other_buttons=notification_buttons
     )
 
     await send_func(
@@ -43,6 +48,7 @@ async def show_my_disciplines(
             page_cb='my_disciplines_page|',
             confirm='➕Добавить',
             confirm_cb='my_disciplines_add',
+            other_buttons=notification_buttons
         )
     )
 
@@ -63,9 +69,9 @@ async def show_subject_details(
 
     await send_func(
         text=f'<b>{stream.title} ({stream.type})</b>\n'
-             f'👤Ваша активность: {current_activity}\n'
+             f'👤Ваша активность: {current_activity.score}\n'
              f'📈 Медианная активность: {median}\n',
-        reply_markup=build_discipline_kb(stream.id)
+        reply_markup=build_discipline_kb(stream.id, current_activity.notify)
     )
 
 
@@ -93,7 +99,6 @@ async def modify_list(
         confirm_text = confirm_data.get('text')
     # other buttons
     other_buttons = state_data.get('other_buttons')
-
 
     await cb.message.edit_reply_markup(
         reply_markup=build_start_choose_kb(

@@ -1,5 +1,4 @@
-from sqlalchemy import select
-# from sqlalchemy.orm import
+from sqlalchemy import select, update, not_
 
 from repositories.base import BaseRepository
 import models
@@ -18,3 +17,21 @@ class ActivityRepository(BaseRepository):
         for user_id, fullname, activities in out.all():
             res.append(QueueActivityElementDto(user_id, fullname, activities))
         return res
+
+    async def change_all_activities(self, user_id: int, mute: bool = False):
+        q = (update(models.Activity)
+             .where(models.Activity.user_id == user_id)
+             .values(notify=not mute)
+        )
+        await self.session.execute(q)
+        await self.session.commit()
+
+    async def change_mute_activity(self, user_id: int, stream_id: int):
+        q = (update(models.Activity)
+             .where(
+            models.Activity.user_id == user_id,
+            models.Activity.stream_id == stream_id)
+             .values(notify=not_(models.Activity.notify))
+             )
+        await self.session.execute(q)
+        await self.session.commit()
