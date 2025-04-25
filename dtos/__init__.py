@@ -3,3 +3,4 @@ from .users import (
     StreamDtoDB
 )
 from .activities import  ActivityDto, QueueActivityElementDto
+from .timetable import ActivityInfo, Notification

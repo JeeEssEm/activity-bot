@@ -32,3 +32,9 @@ def get_database_url(db_name=None):
     if settings.DEBUG:
         return f'sqlite+aiosqlite:///./{db_name}.sqlite'
     return f'postgresql+asyncpg://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}'
+
+
+def get_job_storage_url(db_name=None):
+    if not db_name:
+        db_name = 'jobs'
+    return f'sqlite+aiosqlite:///./{db_name}.sqlite'
