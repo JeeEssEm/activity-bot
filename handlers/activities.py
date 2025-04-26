@@ -105,7 +105,7 @@ async def cancel_set_activity(
     cb: CallbackQuery,
     bot: Bot,
     state: FSMContext,
-    stream_repo: FromDishka[StreamRepository],
+    activity_repo: FromDishka[ActivityRepository],
 ):
     data = await state.get_data()
     stream: StreamDtoDB = data.get('current_stream')
@@ -114,10 +114,7 @@ async def cancel_set_activity(
     await state.clear()
 
     await show_subject_details(
-        user_id=cb.from_user.id,
-        stream=stream,
-        state=state,
-        stream_repo=stream_repo,
+        user_id=cb.from_user.id, state=state, stream=stream, activity_repo=activity_repo,
         send_func=lambda *args, **kwargs: bot.send_message(cb.message.chat.id, *args, **kwargs)
     )
 
@@ -127,7 +124,7 @@ async def set_activity(
         msg: Message,
         bot: Bot,
         state: FSMContext,
-        repo: FromDishka[StreamRepository]
+        repo: FromDishka[ActivityRepository]
 ):
     amount = msg.text.strip()
     if not amount.isdigit() or not amount.isascii():
@@ -152,10 +149,7 @@ async def set_activity(
     await bot.delete_message(chat_id=msg.chat.id, message_id=prev_msg_id)
 
     await show_subject_details(
-        user_id=msg.from_user.id,
-        stream=stream,
-        state=state,
-        stream_repo=repo,
+        user_id=msg.from_user.id, state=state, stream=stream, activity_repo=repo,
         send_func=lambda *args, **kwargs: bot.send_message(msg.from_user.id, *args, **kwargs)
     )
 
@@ -165,16 +159,13 @@ async def cancel_delete_discipline(
         cb: CallbackQuery,
         bot: Bot,
         state: FSMContext,
-        repo: FromDishka[StreamRepository]
+        repo: FromDishka[ActivityRepository]
 ):
     await cb.message.delete()
     state_data = await state.get_data()
     stream: StreamDtoDB = state_data.get('current_stream')
     await show_subject_details(
-        user_id=cb.from_user.id,
-        stream=stream,
-        state=state,
-        stream_repo=repo,
+        user_id=cb.from_user.id, state=state, stream=stream, activity_repo=repo,
         send_func=lambda *args, **kwargs: bot.send_message(cb.from_user.id, *args, **kwargs)
     )
 

@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime, UTC
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -20,8 +21,14 @@ from handlers import user_router, stream_router, activity_router, feedback_route
 
 def setup_scheduler() -> AsyncIOScheduler:
     executors = {'default': AsyncIOExecutor()}
-    storages = {'default': SQLAlchemyJobStore(get_job_storage_url())}
-    scheduler = AsyncIOScheduler(executors=executors, storages=storages)
+    storages = {'default': SQLAlchemyJobStore(get_database_url(), tablename='jobs')}
+    # storages = {'default': SQLAlchemyJobStore(get_job_storage_url())}
+
+    scheduler = AsyncIOScheduler(
+        executors=executors,
+        storages=storages,
+        timezone=UTC,
+    )
 
     return scheduler
 
@@ -55,17 +62,18 @@ async def main():
     dp.include_router(feedback_router)
     dp.include_router(notification_router)
 
-    # scheduler.add_job(
-    #     collect_schedule_wrapper,
-    #     trigger=CronTrigger(...), # TODO: сделать нормальный триггер
-    #     id='collect_schedule',
-    #     kwargs={
-    #         'scheduler': scheduler,
-    #         'container': container,
-    #         'bot': bot,
-    #     }
-    # )
-    # scheduler.start()
+    scheduler.add_job(
+        collect_schedule_wrapper,
+        trigger=CronTrigger(hour=6, timezone=UTC),
+        id='collect_schedule',
+        kwargs={
+            'scheduler': scheduler,
+            'container': container,
+            'bot': bot,
+        },
+        next_run_time=datetime.now(tz=UTC)
+    )
+    scheduler.start()
     print('polling...')
     await dp.start_polling(bot)
 

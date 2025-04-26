@@ -1,9 +1,12 @@
 import asyncio
 
+from aiogram import Bot, Dispatcher
+
 from dtos import StreamDto
 from repositories import UserRepository, StreamRepository
-from config import Database, get_database_url
+from config import Database, get_database_url, settings
 from repositories.activities import ActivityRepository
+from keyboards.notification_kb import notification_kb
 
 
 async def main():
@@ -52,5 +55,18 @@ async def main():
     #     print(await service.create(mail))
 
 
+async def aiobot():
+    dp = Dispatcher()
+    bot = Bot(settings.BOT_TOKEN)
+
+    # await dp.start_polling()
+    await bot.send_message(
+        869822696,
+        text='Как прошла пара по аипу?',
+        reply_markup=notification_kb(5)
+    )
+
+
 if __name__ == '__main__':
-    asyncio.run(main())
+    # asyncio.run(main())
+    asyncio.run(aiobot())

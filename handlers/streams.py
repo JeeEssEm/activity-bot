@@ -25,8 +25,8 @@ async def show_my_disciplines(
 ):
     pages, chosen = await user_service.get_active_user_disciplines(user_id)
     notification_buttons = [
-                [('turn_off_all_notifications', '🔕Заглушить все уведы')],
-                [('turn_on_all_notifications', '🔔Включить все уведы')]
+                [('turn_off_all_notifications', '🔕Заглушить все уведомления')],
+                [('turn_on_all_notifications', '🔔Включить все уведомления')]
             ]
     await state.update_data(
         chosen_streams=ChooseStreams(
@@ -57,15 +57,15 @@ async def show_subject_details(
     user_id: int,
     state: FSMContext,
     stream: StreamDtoDB,
-    stream_repo: StreamRepository,
+    activity_repo: ActivityRepository,
     send_func: Callable[..., Awaitable[Message]]
 ):
     if not stream:
         await send_func('Ошибка: дисциплина не найдена.')
         return
     await state.update_data(current_stream=stream)
-    median = await stream_repo.get_median_activity(stream.id)
-    current_activity = await stream_repo.get_user_stream_activity(user_id, stream.id)
+    median = await activity_repo.get_median_activity(stream.id)
+    current_activity = await activity_repo.get_user_stream_activity(user_id, stream.id)
 
     await send_func(
         text=f'<b>{stream.title} ({stream.type})</b>\n'
@@ -191,7 +191,7 @@ async def get_subject(
         cb: CallbackQuery,
         bot: Bot,
         state: FSMContext,
-        stream_repo: FromDishka[StreamRepository]
+        activity_repo: FromDishka[ActivityRepository]
 ):
     short_stream = cb.data.split('|')[-1]
     data: ChooseStreams = (await state.get_data()).get('chosen_streams')
@@ -201,10 +201,7 @@ async def get_subject(
     await cb.message.delete()
 
     await show_subject_details(
-        user_id=cb.from_user.id,
-        stream=stream,
-        state=state,
-        stream_repo=stream_repo,
+        user_id=cb.from_user.id, state=state, stream=stream, activity_repo=activity_repo,
         send_func=lambda *args, **kwargs: bot.send_message(cb.message.chat.id, *args, **kwargs)
     )
 

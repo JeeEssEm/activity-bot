@@ -40,7 +40,7 @@ class ActivityRepository(BaseRepository):
         await self.session.execute(q)
         await self.session.commit()
 
-    async def get_streams_to_check(self) -> list[ActivityInfo]:
+    async def get_streams_to_check(self) -> dict[str, list[ActivityInfo]]:
         q = (select(
             models.Activity.stream_id, models.Activity.user_id,
             models.Stream.title, models.User.email
@@ -48,12 +48,15 @@ class ActivityRepository(BaseRepository):
              .where(models.Activity.notify == True)
              .join(models.User, onclause=models.User.id == models.Activity.user_id)
              .join(models.Stream, onclause=models.Stream.id == models.Activity.stream_id)
-             .group_by(models.Activity.stream_id)
+             .order_by(models.Activity.user_id)
              )
         out = await self.session.execute(q)
-        res = []
+        res = {}
         for s_id, u_id, title, email in out.all():
-            res.append(ActivityInfo(s_id, u_id, title, email))
+            if email in res:
+                res[email].append(ActivityInfo(s_id, u_id, title))
+            else:
+                res[email] = [ActivityInfo(s_id, u_id, title)]
         return res
 
     async def _get_user_activity(self, user_id: int, stream_id: int) -> models.Activity:

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from repositories import UserRepository, StreamRepository
 from hse_api import HseAPI
 from exceptions.hse_auth import EmailNotFoundInHseDB, EmailAlreadyExistsInHseDB
-from dtos import StreamsDto, StreamType, StreamDto, ChooseStreams, StreamDtoDB
+from dtos import StreamsDto, StreamType, StreamDto, ChooseStreams, StreamDtoDB, TimeTableDTO
 
 
 class UserService:
@@ -45,9 +45,34 @@ class UserService:
                 type=s.get('type'),
                 full_stream=s.get('stream'),
             )
-            for s in raw_streams.schedule
+            for s in raw_streams.schedule if s.get('stream')
         )
         return list(uniq_streams)
+
+    async def get_user_schedule_today(self, email: str) -> list[TimeTableDTO]:
+        today = (datetime.today()).strftime('%Y-%m-%d')
+        raw_streams = await self.api.get_user_schedule(
+            email,
+            start_date=today,
+            end_date=today
+        )
+        res = []
+        for subject in raw_streams.schedule:
+            if subject.get('stream'):
+                res.append(TimeTableDTO(
+                    full_stream=subject['stream'],
+                    time_end=datetime.fromisoformat(subject['date_end'])
+                ))
+
+        # mock data example
+        # res = [
+        #     TimeTableDTO(
+        #         full_stream='М_МА_Г_859408_8#Г#Математический анализ',
+        #         # time_end=datetime(2025, 4, 26, 15, 30), tzinfo=timezone('UTC'))
+        #         time_end=datetime.fromisoformat('2025-04-26T12:36:00Z')
+        #     )
+        # ]
+        return res
 
     async def add_streams(self, user_id: int, streams: list[StreamDto]):
         streams = await self.stream_repo.create_streams_if_not_exists(streams)
