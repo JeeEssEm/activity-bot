@@ -70,7 +70,7 @@ async def show_subject_details(
     await send_func(
         text=f'<b>{stream.title} ({stream.type})</b>\n'
              f'👤Ваша активность: {current_activity.score}\n'
-             f'📈 Медианная активность: {median}\n',
+             f'📈 Медианная активность: {median:.2f}\n',
         reply_markup=build_discipline_kb(stream.id, current_activity.notify)
     )
 

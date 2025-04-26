@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from typing import Annotated, TYPE_CHECKING
 from datetime import datetime
 
-from sqlalchemy import func
+from sqlalchemy import func, inspect
 from sqlalchemy.orm import Mapped, sessionmaker, DeclarativeBase, mapped_column
 from sqlalchemy.ext.asyncio import AsyncSession, AsyncAttrs, create_async_engine
 
@@ -33,6 +33,17 @@ class Database:
         async with self._engine.begin() as session:
             await session.run_sync(Base.metadata.drop_all)
             await session.run_sync(Base.metadata.create_all)
+
+    async def check_and_create_tables(self):
+        async with self._engine.connect() as conn:
+            tables = await conn.run_sync(
+                lambda sync_conn: inspect(sync_conn).get_table_names()
+            )
+        expected_tables = Base.metadata.tables
+
+        if not all(table in tables for table in expected_tables):
+            await self.init_models()
+            print('Таблицы созданы!')
 
     async def drop_models(self):
         async with self._engine.begin() as session:

@@ -1,49 +1,53 @@
 import asyncio
 from datetime import datetime, UTC
+import pathlib
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from aiogram.fsm.storage.redis import RedisStorage
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.executors.asyncio import AsyncIOExecutor
 from apscheduler.triggers.cron import CronTrigger
 
 from dishka import make_async_container, FromDishka
 from dishka.integrations.aiogram import setup_dishka
 
-from schedule import collect_schedule_wrapper
-from shared import APIProvider, ServiceProvider, DatabaseProvider
-from config import settings, get_database_url, Database, get_job_storage_url
+from schedule.job_wrappers import collect_schedule_wrapper
+from shared import APIProvider, ServiceProvider, DatabaseProvider, serialize_dataclasses, deserialize_dataclasses
+from config import settings, get_database_url, Database, get_job_storage_url, get_redis_url
 from handlers import user_router, stream_router, activity_router, feedback_router, notification_router
 
 
 def setup_scheduler() -> AsyncIOScheduler:
     executors = {'default': AsyncIOExecutor()}
-    storages = {'default': SQLAlchemyJobStore(get_database_url(), tablename='jobs')}
-    # storages = {'default': SQLAlchemyJobStore(get_job_storage_url())}
-
     scheduler = AsyncIOScheduler(
         executors=executors,
-        storages=storages,
         timezone=UTC,
     )
 
     return scheduler
 
 
-async def init_db(db: FromDishka[Database] = None):
-    await db.init_models()
+def setup_redis() -> RedisStorage:
+    return RedisStorage.from_url(
+        get_redis_url(),
+        json_loads=deserialize_dataclasses,
+        json_dumps=serialize_dataclasses,
+    )
 
 
 async def main():
     scheduler = setup_scheduler()
+    redis = setup_redis()
     bot = Bot(
         token=settings.BOT_TOKEN,
-        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+
     )
-    dp = Dispatcher()
+    dp = Dispatcher(storage=redis)
+
     providers = [
         APIProvider(),
         DatabaseProvider(get_database_url()),
@@ -53,8 +57,8 @@ async def main():
     container = make_async_container(*providers)
     setup_dishka(container, dp, auto_inject=True)
 
-    # async with container() as cont:
-    #     await init_db(await cont.get(Database))
+    async with container() as cont:
+        await (await cont.get(Database)).check_and_create_tables()
 
     dp.include_router(user_router)
     dp.include_router(stream_router)

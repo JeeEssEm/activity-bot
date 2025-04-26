@@ -1,10 +1,16 @@
 import asyncio
+from datetime import datetime, UTC, timedelta
+import logging
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.executors.asyncio import AsyncIOExecutor
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from apscheduler.triggers.date import DateTrigger
 from aiogram import Bot, Dispatcher
 
 from dtos import StreamDto
 from repositories import UserRepository, StreamRepository
-from config import Database, get_database_url, settings
+from config import Database, get_database_url, settings, get_job_storage_url
 from repositories.activities import ActivityRepository
 from keyboards.notification_kb import notification_kb
 
@@ -55,18 +61,41 @@ async def main():
     #     print(await service.create(mail))
 
 
-async def aiobot():
-    dp = Dispatcher()
-    bot = Bot(settings.BOT_TOKEN)
+async def job():
+    await asyncio.sleep(1)
+    print('job completed')
 
-    # await dp.start_polling()
-    await bot.send_message(
-        869822696,
-        text='Как прошла пара по аипу?',
-        reply_markup=notification_kb(5)
+
+async def test_jobs():
+
+    executors = {'default': AsyncIOExecutor()}
+    storages = {'default': SQLAlchemyJobStore(get_job_storage_url())}
+    # storages = {'default': SQLAlchemyJobStore(get_job_storage_url())}
+
+    scheduler = AsyncIOScheduler(
+        executors=executors,
+        jobstores=storages,
+        timezone=UTC,
     )
+    scheduler.add_job(
+        job,
+        trigger=DateTrigger(datetime.now() + timedelta(hours=1)),
+    )
+    scheduler.start()
+    logging.basicConfig()
+    logging.getLogger('apscheduler').setLevel(logging.DEBUG)
+
+    while True:
+        await asyncio.sleep(1)
+
+
+async def test_db():
+    db = Database(get_database_url())
+    await db.check_and_create_tables()
 
 
 if __name__ == '__main__':
+    asyncio.run(test_db())
     # asyncio.run(main())
-    asyncio.run(aiobot())
+    # asyncio.run(aiobot())
+
