@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, BigInteger
 from sqlalchemy.orm import Mapped, relationship, mapped_column
 
 if TYPE_CHECKING:
@@ -14,6 +14,7 @@ from dtos import ActivityDto
 class Activity(Base):
     __tablename__ = 'activities'
     user_id: Mapped[int] = mapped_column(
+        BigInteger,
         ForeignKey('users.id', ondelete='CASCADE'),
         primary_key=True
     )
